@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Booking System</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --card: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #e8c547;
+    --accent2: #e05c2a;
+    --text: #f0ece0;
+    --muted: #888;
+    --green: #4caf7d;
+    --red: #e05c2a;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+  /* NOISE TEXTURE */
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 200px 200px; opacity:.4;
+  }
+  /* ===================== HEADER ===================== */
+  header {
+    position:sticky; top:0; z-index:100;
+    background: rgba(13,13,13,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items:center; justify-content:space-between;
+    height: 60px;
+  }
+  .logo { font-family:'Bebas Neue'; font-size:1.8rem; letter-spacing:3px; color:var(--accent); }
+  .logo span { color:var(--accent2); }
+  .header-right { display:flex; gap:10px; align-items:center; }
+  button {
+    cursor:pointer; border:none; font-family:'IBM Plex Sans'; font-size:.85rem;
+  }
+  .btn-ghost {
+    background:transparent; color:var(--muted); padding:8px 16px;
+    border:1px solid var(--border); border-radius:4px; transition:.2s;
+  }
+  .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-accent {
+    background:var(--accent); color:#000; font-weight:600;
+    padding:8px 18px; border-radius:4px; transition:.2s;
+  }
+  .btn-accent:hover { background:#f0d060; }
+  .btn-danger { background:var(--accent2); color:#fff; font-weight:600; padding:8px 16px; border-radius:4px; }
+  /* ===================== MAIN LAYOUT ===================== */
+  main { position:relative; z-index:1; max-width:1000px; margin:0 auto; padding:32px 20px; }
+  h1 { font-family:'Bebas Neue'; font-size:2.8rem; letter-spacing:4px; margin-bottom:6px; }
+  h1 span { color:var(--accent); }
+  .subtitle { color:var(--muted); font-family:'IBM Plex Mono'; font-size:.8rem; margin-bottom:32px; }
+  /* CARDS */
+  .card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:8px; padding:24px; margin-bottom:20px;
+  }
+  .card-title {
+    font-family:'Bebas Neue'; font-size:1.4rem; letter-spacing:2px;
+    color:var(--accent); margin-bottom:16px; display:flex; align-items:center; gap:10px;
+  }
+  .badge {
+    font-family:'IBM Plex Mono'; font-size:.65rem; padding:3px 8px;
+    border-radius:3px; font-weight:600; letter-spacing:1px;
+  }
+  .badge-gold { background:#3a3010; color:var(--accent); }
+  .badge-red { background:#3a1510; color:var(--accent2); }
+  .badge-green { background:#0f2e1e; color:var(--green); }
+  /* STOCK BAR */
+  .stock-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 0; border-bottom:1px solid var(--border);
+  }
+  .stock-row:last-child { border-bottom:none; }
+  .stock-name { font-weight:600; font-size:.95rem; }
+  .stock-meta { color:var(--muted); font-family:'IBM Plex Mono'; font-size:.75rem; }
+  .stock-qty {
+    font-family:'Bebas Neue'; font-size:1.4rem; color:var(--accent);
+    letter-spacing:2px;
+  }
+  /* FORM */
+  .form-group { margin-bottom:16px; }
+  label { display:block; font-size:.8rem; color:var(--muted); font-family:'IBM Plex Mono'; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; }
+  input, select {
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    color:var(--text); font-family:'IBM Plex Sans'; font-size:.9rem;
+    padding:10px 14px; border-radius:4px; outline:none; transition:.2s;
+  }
+  input:focus, select:focus { border-color:var(--accent); }
+  select option { background:var(--surface); }
+  .qty-row { display:flex; gap:10px; }
+  .qty-row .form-group { flex:1; }
+  /* QTY CONTROLS */
+  .qty-ctrl { display:flex; align-items:center; gap:8px; }
+  .qty-ctrl button {
+    width:32px; height:32px; background:var(--surface);
+    border:1px solid var(--border); color:var(--text); border-radius:4px;
+    font-size:1.1rem; transition:.2s;
+  }
+  .qty-ctrl button:hover { border-color:var(--accent); color:var(--accent); }
+  .qty-ctrl input { text-align:center; width:70px; flex:unset; }
+  /* TOTAL */
+  .total-box {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:6px; padding:16px; margin:20px 0;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .total-label { font-family:'IBM Plex Mono'; font-size:.8rem; color:var(--muted); }
+  .total-amount { font-family:'Bebas Neue'; font-size:2.2rem; color:var(--accent); letter-spacing:3px; }
+  .total-breakdown { font-family:'IBM Plex Mono'; font-size:.72rem; color:var(--muted); margin-top:4px; }
+  /* TABS */
+  .tabs { display:flex; gap:4px; margin-bottom:24px; background:var(--card); border:1px solid var(--border); border-radius:6px; padding:4px; }
+  .tab-btn {
+    flex:1; padding:10px; background:transparent; color:var(--muted);
+    border-radius:4px; font-family:'IBM Plex Mono'; font-size:.8rem;
+    letter-spacing:1px; text-transform:uppercase; transition:.2s;
+  }
+  .tab-btn.active { background:var(--accent); color:#000; font-weight:600; }
+  /* BOOKINGS TABLE */
+  .booking-item {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:6px; padding:14px 16px; margin-bottom:10px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .booking-id { font-family:'IBM Plex Mono'; font-size:.7rem; color:var(--muted); }
+  .booking-detail { font-size:.85rem; margin-top:4px; }
+  .booking-amount { font-family:'Bebas Neue'; font-size:1.4rem; color:var(--accent); }
+  .booking-time { font-family:'IBM Plex Mono'; font-size:.68rem; color:var(--muted); margin-top:2px; }
+  /* QR PAGE */
+  #qr-page {
+    display:none; position:fixed; inset:0; z-index:200;
+    background:var(--bg); overflow-y:auto;
+  }
+  .qr-container { max-width:420px; margin:60px auto; padding:20px; text-align:center; }
+  .qr-card { background:var(--card); border:1px solid var(--accent); border-radius:12px; padding:32px; }
+  .qr-title { font-family:'Bebas Neue'; font-size:2rem; letter-spacing:3px; color:var(--accent); margin-bottom:6px; }
+  .qr-img { margin:24px auto; }
+  .qr-amount { font-family:'Bebas Neue'; font-size:3rem; color:var(--accent); letter-spacing:4px; }
+  .qr-upi { font-family:'IBM Plex Mono'; font-size:.75rem; color:var(--muted); margin-top:8px; }
+  .booking-confirm {
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:14px; margin:16px 0; text-align:left;
+  }
+  .confirm-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border); font-size:.82rem; }
+  .confirm-row:last-child { border:none; }
+  .confirm-label { color:var(--muted); font-family:'IBM Plex Mono'; font-size:.72rem; }
+  /* ADMIN PANEL */
+  .admin-header {
+    background: linear-gradient(135deg, #2a1a00, #1e1e1e);
+    border:1px solid var(--accent); border-radius:8px; padding:16px 20px;
+    margin-bottom:20px; display:flex; align-items:center; gap:12px;
+  }
+  .admin-icon { font-size:1.5rem; }
+  .admin-title { font-family:'Bebas Neue'; letter-spacing:2px; font-size:1.2rem; color:var(--accent); }
+  .admin-sub { font-size:.75rem; color:var(--muted); font-family:'IBM Plex Mono'; }
+  .stock-edit-row {
+    display:flex; align-items:center; gap:12px;
+    padding:14px 0; border-bottom:1px solid var(--border);
+  }
+  .stock-edit-row:last-child { border:none; }
+  .stock-edit-row .stock-name { flex:1; }
+  .stock-edit-row input { width:100px; flex:unset; }
+  /* MODAL */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; z-index:300;
+    background:rgba(0,0,0,.8); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center;
+  }
+  .modal-overlay.show { display:flex; }
+  .modal {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:28px; width:340px; max-width:90vw;
+  }
+  .modal-title { font-family:'Bebas Neue'; font-size:1.5rem; letter-spacing:2px; margin-bottom:16px; }
+  .msg { padding:10px; border-radius:4px; font-size:.82rem; margin-bottom:12px; font-family:'IBM Plex Mono'; }
+  .msg-error { background:#3a0f0f; color:#e07070; border:1px solid #5a1f1f; }
+  .msg-success { background:#0f2e1e; color:var(--green); border:1px solid #1f5e3e; }
+  /* DIVIDER */
+  .divider { border:none; border-top:1px solid var(--border); margin:20px 0; }
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .fadein { animation: fadeUp .4s ease forwards; }
+  .hidden { display:none !important; }
+  /* ADMIN NAME COL */
+  .name-col { color:var(--accent); font-weight:600; }
+  .admin-name-cell { display:none; }
+  .is-admin .admin-name-cell { display:block; }
+  /* RESPONSIVE */
+  @media(max-width:600px) {
+    h1 { font-size:2rem; }
+    .qty-row { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">STOCK<span>BOOK</span></div>
+  <div class="header-right">
+    <span id="user-label" style="font-family:'IBM Plex Mono';font-size:.75rem;color:var(--muted);"></span>
+    <button class="btn-ghost" id="admin-btn" onclick="showAdminLogin()">Admin</button>
+    <button class="btn-danger hidden" id="logout-btn" onclick="doLogout()">Logout</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main id="main-content">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('book')" id="tab-book">📦 Book</button>
+    <button class="tab-btn" onclick="switchTab('mybookings')" id="tab-mybookings">📋 My Bookings</button>
+    <button class="tab-btn hidden" onclick="switchTab('admin')" id="tab-admin">🔐 Admin</button>
+  </div>
+
+  <!-- ============ BOOKING TAB ============ -->
+  <div id="tab-content-book" class="fadein">
+    <h1>PLACE YOUR <span>ORDER</span></h1>
+    <p class="subtitle">// FILL DETAILS · CONFIRM · PAY VIA QR</p>
+
+    <!-- LIVE STOCK -->
+    <div class="card">
+      <div class="card-title">📊 LIVE STOCK <span class="badge badge-green">LIVE</span></div>
+      <div class="stock-row">
+        <div>
+          <div class="stock-name">Advance</div>
+          <div class="stock-meta">₹20 per piece</div>
+        </div>
+        <div class="stock-qty" id="disp-adv">—</div>
+      </div>
+      <div class="stock-row">
+        <div>
+          <div class="stock-name">Superstar</div>
+          <div class="stock-meta">₹16 per piece</div>
+        </div>
+        <div class="stock-qty" id="disp-sup">—</div>
+      </div>
+      <div class="stock-row">
+        <div>
+          <div class="stock-name">Paper Sheet</div>
+          <div class="stock-meta">₹5 per sheet</div>
+        </div>
+        <div class="stock-qty" id="disp-sheet">—</div>
+      </div>
+    </div>
+
+    <!-- BOOKING FORM -->
+    <div class="card">
+      <div class="card-title">✍️ BOOKING DETAILS</div>
+      <div id="form-msg"></div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="buyer-name" placeholder="Enter your name" autocomplete="off">
+      </div>
+      <div class="qty-row">
+        <div class="form-group">
+          <label>Advance (₹20)</label>
+          <div class="qty-ctrl">
+            <button onclick="adj('adv',-1)">−</button>
+            <input type="number" id="qty-adv" value="0" min="0" oninput="calcTotal()">
+            <button onclick="adj('adv',1)">+</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Superstar (₹16)</label>
+          <div class="qty-ctrl">
+            <button onclick="adj('sup',-1)">−</button>
+            <input type="number" id="qty-sup" value="0" min="0" oninput="calcTotal()">
+            <button onclick="adj('sup',1)">+</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Paper Sheet (₹5)</label>
+          <div class="qty-ctrl">
+            <button onclick="adj('sheet',-1)">−</button>
+            <input type="number" id="qty-sheet" value="0" min="0" oninput="calcTotal()">
+            <button onclick="adj('sheet',1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="total-box">
+        <div>
+          <div class="total-label">TOTAL AMOUNT</div>
+          <div class="total-breakdown" id="breakdown">—</div>
+        </div>
+        <div class="total-amount" id="total-disp">₹0</div>
+      </div>
+      <button class="btn-accent" style="width:100%;padding:14px;font-size:1rem;border-radius:6px;" onclick="submitBooking()">
+        CONFIRM & PAY →
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ MY BOOKINGS TAB ============ -->
+  <div id="tab-content-mybookings" class="hidden">
+    <h1>MY <span>BOOKINGS</span></h1>
+    <p class="subtitle">// ENTER YOUR NAME TO VIEW YOUR ORDERS</p>
+    <div class="card">
+      <div class="form-group">
+        <label>Your Name</label>
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="lookup-name" placeholder="Enter your name" autocomplete="off">
+          <button class="btn-accent" onclick="lookupBookings()" style="white-space:nowrap;padding:10px 18px;border-radius:4px;">Search</button>
+        </div>
+      </div>
+    </div>
+    <div id="my-bookings-list"></div>
+  </div>
+
+  <!-- ============ ADMIN TAB ============ -->
+  <div id="tab-content-admin" class="hidden">
+    <h1>ADMIN <span>PANEL</span></h1>
+    <p class="subtitle">// RESTRICTED ACCESS · MANAGE STOCK & BOOKINGS</p>
+
+    <div class="admin-header">
+      <div class="admin-icon">🔐</div>
+      <div>
+        <div class="admin-title">Administrator Mode</div>
+        <div class="admin-sub">Full access enabled</div>
+      </div>
+    </div>
+
+    <!-- STOCK MANAGER -->
+    <div class="card">
+      <div class="card-title">📦 MANAGE STOCK</div>
+      <div class="stock-edit-row">
+        <div class="stock-name">Advance <span class="stock-meta">(₹20 each)</span></div>
+        <input type="number" id="admin-adv" value="0" min="0">
+        <button class="btn-accent" onclick="updateStock('adv')">Update</button>
+      </div>
+      <div class="stock-edit-row">
+        <div class="stock-name">Superstar <span class="stock-meta">(₹16 each)</span></div>
+        <input type="number" id="admin-sup" value="0" min="0">
+        <button class="btn-accent" onclick="updateStock('sup')">Update</button>
+      </div>
+      <div class="stock-edit-row">
+        <div class="stock-name">Paper Sheet <span class="stock-meta">(₹5 each)</span></div>
+        <input type="number" id="admin-sheet" value="0" min="0">
+        <button class="btn-accent" onclick="updateStock('sheet')">Update</button>
+      </div>
+    </div>
+
+    <!-- ALL BOOKINGS (admin sees names) -->
+    <div class="card">
+      <div class="card-title">📋 ALL BOOKINGS</div>
+      <div id="admin-bookings-list">
+        <div style="color:var(--muted);font-family:'IBM Plex Mono';font-size:.8rem;">No bookings yet.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ============ QR PAYMENT PAGE ============ -->
+<div id="qr-page">
+  <div class="qr-container">
+    <div class="qr-card">
+      <div class="qr-title">💳 PAYMENT</div>
+      <p style="color:var(--muted);font-family:'IBM Plex Mono';font-size:.75rem;">Scan QR · Pay · Done</p>
+      <div class="qr-img" id="qr-img-container"></div>
+      <div class="total-label">AMOUNT TO PAY</div>
+      <div class="qr-amount" id="qr-total-amt">₹0</div>
+      <div class="qr-upi" id="qr-upi-id">UPI: stockbook@upi</div>
+      <div class="booking-confirm" id="qr-details"></div>
+      <p style="font-family:'IBM Plex Mono';font-size:.7rem;color:var(--muted);margin:12px 0;">Booking ID: <span id="qr-booking-id" style="color:var(--accent)"></span></p>
+      <button class="btn-accent" style="width:100%;padding:14px;font-size:1rem;border-radius:6px;margin-top:8px;" onclick="confirmPayment()">
+        ✅ PAYMENT DONE
+      </button>
+      <button class="btn-ghost" style="width:100%;padding:12px;margin-top:8px;" onclick="closeQR()">
+        ← Back
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay" id="admin-modal">
+  <div class="modal">
+    <div class="modal-title">🔐 ADMIN LOGIN</div>
+    <div id="admin-login-msg"></div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="admin-pass" placeholder="Enter admin password" onkeydown="if(event.key==='Enter') doAdminLogin()">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn-accent" onclick="doAdminLogin()" style="flex:1;padding:10px;">Login</button>
+      <button class="btn-ghost" onclick="closeAdminModal()" style="flex:1;padding:10px;">Cancel</button>
+    </div>
+    <p style="color:var(--muted);font-family:'IBM Plex Mono';font-size:.65rem;margin-top:12px;">Default: admin123</p>
+  </div>
+</div>
+
+<!-- SUCCESS TOAST -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;z-index:999;background:var(--green);color:#000;padding:12px 20px;border-radius:6px;font-family:'IBM Plex Mono';font-size:.8rem;font-weight:600;display:none;"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const ADMIN_PASS = 'admin123';
+const UPI_ID = 'stockbook@upi';
+const RATES = { adv: 20, sup: 16, sheet: 5 };
+const NAMES = { adv: 'Advance', sup: 'Superstar', sheet: 'Paper Sheet' };
+
+let state = {
+  isAdmin: false,
+  stock: { adv: 100, sup: 80, sheet: 200 },
+  bookings: [],
+  currentBooking: null,
+};
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  const saved = localStorage.getItem('stockbook_data');
+  if (saved) { try { const d = JSON.parse(saved); state.stock = d.stock || state.stock; state.bookings = d.bookings || []; } catch(e){} }
+  renderStock();
+  calcTotal();
+}
+
+function save() {
+  localStorage.setItem('stockbook_data', JSON.stringify({ stock: state.stock, bookings: state.bookings }));
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(t) {
+  ['book','mybookings','admin'].forEach(id => {
+    document.getElementById('tab-content-'+id).classList.add('hidden');
+    document.getElementById('tab-'+id).classList.remove('active');
+  });
+  document.getElementById('tab-content-'+t).classList.remove('hidden');
+  document.getElementById('tab-'+t).classList.add('active');
+  if (t === 'admin') renderAdminBookings();
+  if (t === 'mybookings') document.getElementById('my-bookings-list').innerHTML = '';
+}
+
+// ============================================================
+// STOCK RENDER
+// ============================================================
+function renderStock() {
+  document.getElementById('disp-adv').textContent = state.stock.adv + ' pcs';
+  document.getElementById('disp-sup').textContent = state.stock.sup + ' pcs';
+  document.getElementById('disp-sheet').textContent = state.stock.sheet + ' sheets';
+  if (state.isAdmin) {
+    document.getElementById('admin-adv').value = state.stock.adv;
+    document.getElementById('admin-sup').value = state.stock.sup;
+    document.getElementById('admin-sheet').value = state.stock.sheet;
+  }
+}
+
+// ============================================================
+// QTY CONTROLS
+// ============================================================
+function adj(type, delta) {
+  const el = document.getElementById('qty-' + type);
+  let v = parseInt(el.value) || 0;
+  v = Math.max(0, v + delta);
+  el.value = v;
+  calcTotal();
+}
+
+function calcTotal() {
+  const adv = parseInt(document.getElementById('qty-adv').value) || 0;
+  const sup = parseInt(document.getElementById('qty-sup').value) || 0;
+  const sheet = parseInt(document.getElementById('qty-sheet').value) || 0;
+  const total = adv * RATES.adv + sup * RATES.sup + sheet * RATES.sheet;
+  document.getElementById('total-disp').textContent = '₹' + total;
+  const parts = [];
+  if (adv) parts.push(adv + '× Adv ₹' + (adv * RATES.adv));
+  if (sup) parts.push(sup + '× Sup ₹' + (sup * RATES.sup));
+  if (sheet) parts.push(sheet + '× Sheet ₹' + (sheet * RATES.sheet));
+  document.getElementById('breakdown').textContent = parts.join(' · ') || '—';
+  return total;
+}
+
+// ============================================================
+// BOOKING SUBMIT
+// ============================================================
+function submitBooking() {
+  const name = document.getElementById('buyer-name').value.trim();
+  const adv = parseInt(document.getElementById('qty-adv').value) || 0;
+  const sup = parseInt(document.getElementById('qty-sup').value) || 0;
+  const sheet = parseInt(document.getElementById('qty-sheet').value) || 0;
+  const msgEl = document.getElementById('form-msg');
+
+  if (!name) { showMsg(msgEl, 'Please enter your name.', 'error'); return; }
+  if (adv + sup + sheet === 0) { showMsg(msgEl, 'Select at least one item.', 'error'); return; }
+  if (adv > state.stock.adv) { showMsg(msgEl, 'Not enough Advance stock. Available: ' + state.stock.adv, 'error'); return; }
+  if (sup > state.stock.sup) { showMsg(msgEl, 'Not enough Superstar stock. Available: ' + state.stock.sup, 'error'); return; }
+  if (sheet > state.stock.sheet) { showMsg(msgEl, 'Not enough Paper Sheets. Available: ' + state.stock.sheet, 'error'); return; }
+
+  const total = adv * RATES.adv + sup * RATES.sup + sheet * RATES.sheet;
+  const now = new Date();
+  const bookingId = 'BK' + Date.now().toString(36).toUpperCase();
+
+  state.currentBooking = { id: bookingId, name, adv, sup, sheet, total, datetime: now.toISOString(), paid: false };
+  msgEl.innerHTML = '';
+  openQR(state.currentBooking);
+}
+
+// ============================================================
+// QR PAGE
+// ============================================================
+function openQR(b) {
+  const page = document.getElementById('qr-page');
+  page.style.display = 'block';
+
+  document.getElementById('qr-total-amt').textContent = '₹' + b.total;
+  document.getElementById('qr-booking-id').textContent = b.id;
+  document.getElementById('qr-upi-id').textContent = 'UPI: ' + UPI_ID;
+
+  // Details
+  const dt = new Date(b.datetime);
+  const dtStr = dt.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+  let details = '';
+  if (b.adv) details += `<div class="confirm-row"><span class="confirm-label">Advance</span><span>${b.adv} pcs × ₹${RATES.adv} = ₹${b.adv*RATES.adv}</span></div>`;
+  if (b.sup) details += `<div class="confirm-row"><span class="confirm-label">Superstar</span><span>${b.sup} pcs × ₹${RATES.sup} = ₹${b.sup*RATES.sup}</span></div>`;
+  if (b.sheet) details += `<div class="confirm-row"><span class="confirm-label">Paper Sheet</span><span>${b.sheet} × ₹${RATES.sheet} = ₹${b.sheet*RATES.sheet}</span></div>`;
+  details += `<div class="confirm-row"><span class="confirm-label">Date & Time</span><span>${dtStr}</span></div>`;
+  document.getElementById('qr-details').innerHTML = details;
+
+  // QR Code using goqr.me API
+  const upiStr = `upi://pay?pa=${UPI_ID}&pn=StockBook&am=${b.total}&tn=${b.id}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiStr)}&bgcolor=1e1e1e&color=e8c547&margin=10`;
+  document.getElementById('qr-img-container').innerHTML = `<img src="${qrUrl}" alt="QR Code" style="border-radius:8px;border:2px solid var(--accent);width:200px;height:200px;">`;
+}
+
+function closeQR() {
+  document.getElementById('qr-page').style.display = 'none';
+  state.currentBooking = null;
+}
+
+function confirmPayment() {
+  if (!state.currentBooking) return;
+  const b = state.currentBooking;
+  b.paid = true;
+
+  // Deduct stock
+  state.stock.adv -= b.adv;
+  state.stock.sup -= b.sup;
+  state.stock.sheet -= b.sheet;
+
+  state.bookings.push(b);
+  save();
+  renderStock();
+
+  // Reset form
+  document.getElementById('buyer-name').value = '';
+  document.getElementById('qty-adv').value = 0;
+  document.getElementById('qty-sup').value = 0;
+  document.getElementById('qty-sheet').value = 0;
+  calcTotal();
+
+  document.getElementById('qr-page').style.display = 'none';
+  state.currentBooking = null;
+  showToast('✅ Booking confirmed! ID: ' + b.id);
+  switchTab('mybookings');
+  document.getElementById('lookup-name').value = b.name;
+  lookupBookings(b.name);
+}
+
+// ============================================================
+// MY BOOKINGS
+// ============================================================
+function lookupBookings(forceName) {
+  const name = forceName || document.getElementById('lookup-name').value.trim().toLowerCase();
+  const listEl = document.getElementById('my-bookings-list');
+  if (!name) { listEl.innerHTML = '<div class="card" style="color:var(--muted);font-family:IBM Plex Mono;font-size:.8rem;">Enter your name above.</div>'; return; }
+
+  const matches = state.bookings.filter(b => b.name.toLowerCase() === name);
+  if (matches.length === 0) {
+    listEl.innerHTML = '<div class="card" style="color:var(--muted);font-family:IBM Plex Mono;font-size:.8rem;">No bookings found for this name.</div>'; return;
+  }
+
+  listEl.innerHTML = matches.reverse().map(b => {
+    const dt = new Date(b.datetime);
+    const dtStr = dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const items = [];
+    if (b.adv) items.push(`Advance ×${b.adv}`);
+    if (b.sup) items.push(`Superstar ×${b.sup}`);
+    if (b.sheet) items.push(`Sheet ×${b.sheet}`);
+    return `<div class="booking-item fadein">
+      <div>
+        <div class="booking-id">${b.id}</div>
+        <div class="booking-detail">${items.join(' · ')}</div>
+        <div class="booking-time">📅 ${dtStr}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="booking-amount">₹${b.total}</div>
+        <div class="badge ${b.paid ? 'badge-green' : 'badge-red'}" style="margin-top:4px;">${b.paid ? 'PAID' : 'PENDING'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+function showAdminLogin() { document.getElementById('admin-modal').classList.add('show'); document.getElementById('admin-pass').focus(); }
+function closeAdminModal() { document.getElementById('admin-modal').classList.remove('show'); document.getElementById('admin-login-msg').innerHTML = ''; }
+
+function doAdminLogin() {
+  const pass = document.getElementById('admin-pass').value;
+  if (pass === ADMIN_PASS) {
+    state.isAdmin = true;
+    closeAdminModal();
+    document.getElementById('admin-btn').classList.add('hidden');
+    document.getElementById('logout-btn').classList.remove('hidden');
+    document.getElementById('tab-admin').classList.remove('hidden');
+    document.getElementById('user-label').textContent = '👑 ADMIN';
+    renderStock();
+    showToast('Welcome, Admin!');
+    switchTab('admin');
+  } else {
+    showMsg(document.getElementById('admin-login-msg'), 'Wrong password.', 'error');
+  }
+}
+
+function doLogout() {
+  state.isAdmin = false;
+  document.getElementById('admin-btn').classList.remove('hidden');
+  document.getElementById('logout-btn').classList.add('hidden');
+  document.getElementById('tab-admin').classList.add('hidden');
+  document.getElementById('user-label').textContent = '';
+  switchTab('book');
+}
+
+function updateStock(type) {
+  const val = parseInt(document.getElementById('admin-' + type).value);
+  if (isNaN(val) || val < 0) { showToast('Invalid value!'); return; }
+  state.stock[type] = val;
+  save();
+  renderStock();
+  showToast(NAMES[type] + ' stock updated to ' + val);
+}
+
+function renderAdminBookings() {
+  const el = document.getElementById('admin-bookings-list');
+  if (state.bookings.length === 0) { el.innerHTML = '<div style="color:var(--muted);font-family:IBM Plex Mono;font-size:.8rem;">No bookings yet.</div>'; return; }
+  el.innerHTML = [...state.bookings].reverse().map(b => {
+    const dt = new Date(b.datetime);
+    const dtStr = dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const items = [];
+    if (b.adv) items.push(`Adv ×${b.adv}`);
+    if (b.sup) items.push(`Sup ×${b.sup}`);
+    if (b.sheet) items.push(`Sheet ×${b.sheet}`);
+    return `<div class="booking-item fadein">
+      <div>
+        <div class="booking-id">${b.id}</div>
+        <div class="booking-detail" style="color:var(--accent);font-weight:600;">👤 ${b.name}</div>
+        <div class="booking-detail" style="margin-top:2px;">${items.join(' · ')}</div>
+        <div class="booking-time">📅 ${dtStr}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="booking-amount">₹${b.total}</div>
+        <div class="badge ${b.paid ? 'badge-green' : 'badge-red'}" style="margin-top:4px;">${b.paid ? 'PAID' : 'PENDING'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function showMsg(el, msg, type) {
+  el.innerHTML = `<div class="msg msg-${type === 'error' ? 'error' : 'success'}">${msg}</div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 3000);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+init();
+</script>
+</body>
+</html>
